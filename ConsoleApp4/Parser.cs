@@ -1,29 +1,66 @@
-﻿using System.Text.RegularExpressions;
+﻿using ConsoleApp4;
+using System.Text;
 
-namespace ConsoleApp4
+public class TextParser
 {
-    public static class TextParser
+    private readonly string input;
+    private static readonly char[] SentenceEndings = { '.', '?', '!' };
+    private static readonly HashSet<char> PunctChars = new()
     {
-        public static Text Parse(string input)
+        '.', ',', ';', ':', '?', '!', '—', '-', '(', ')', '[', ']', '{', '}', '«', '»', '"', '\'', '…'
+    };
+
+    public TextParser(string text)
+    {
+        input = text ?? string.Empty;
+    }
+
+    public Text Parse()
+    {
+        var text = new Text();
+        var sentence = new Sentence();
+        var wordBuilder = new StringBuilder();
+
+        for (int i = 0; i < input.Length; i++)
         {
-            Text text = new Text();
-            string[] sentenceStrings = Regex.Split(input, @"(?<=[\.!\?])\s+");
-            foreach (var s in sentenceStrings)
+            char ch = input[i];
+
+            if (char.IsLetterOrDigit(ch) || ch == '\'')
             {
-                if (string.IsNullOrWhiteSpace(s)) continue;
-                Sentence sentence = new Sentence();
-                foreach (Match match in Regex.Matches(s, @"\w+|[^\w\s]"))
+                wordBuilder.Append(ch);
+            }
+            else
+            {
+                if (wordBuilder.Length > 0)
                 {
-                    string tokenStr = match.Value;
-                    if (Regex.IsMatch(tokenStr, @"\w+"))
-                        sentence.AddToken(new Word(tokenStr));
-                    else
-                        sentence.AddToken(new Punctuation(tokenStr));
+                    sentence.AddToken(new Word(wordBuilder.ToString()));
+                    wordBuilder.Clear();
                 }
 
-                text.AddSentence(sentence);
+                if (PunctChars.Contains(ch))
+                {
+                    var punc = new StringBuilder().Append(ch);
+                    while (i + 1 < input.Length && PunctChars.Contains(input[i + 1]))
+                    {
+                        i++;
+                        punc.Append(input[i]);
+                    }
+
+                    sentence.AddToken(new Punctuation(punc.ToString()));
+                    if (punc.ToString().Any(c => SentenceEndings.Contains(c)))
+                    {
+                        text.AddSentence(sentence);
+                        sentence = new Sentence();
+                    }
+                }
             }
-            return text;
         }
+        if (wordBuilder.Length > 0)
+            sentence.AddToken(new Word(wordBuilder.ToString()));
+
+        if (sentence.Tokens.Count > 0)
+            text.AddSentence(sentence);
+
+        return text;
     }
 }

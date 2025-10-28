@@ -46,5 +46,65 @@
         public void AddSentence(Sentence sentence) => Sentences.Add(sentence);
 
         public override string ToString() => string.Join(" ", Sentences.Select(s => s.ToString()));
+
+        public List<Sentence> GetSentencesByWordCount()
+        {
+            return Sentences.OrderBy(s => s.WordCount).ToList();
+        }
+
+        public List<Sentence> GetSentencesByLength()
+        {
+            return Sentences.OrderBy(s => s.ToString().Length).ToList();
+        }
+          
+        public HashSet<string> FindWordsInQuestions(int length)
+        {
+            var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var sentence in Sentences)
+            {
+                if (sentence.Tokens.OfType<Punctuation>().Any(p => p.Value == "?"))
+                {
+                    foreach (var word in sentence.Tokens.OfType<Word>())
+                    {
+                        if (word.Length == length)
+                            result.Add(word.Value);
+                    }
+                }
+            }
+            return result;
+        }
+
+        public void RemoveWordsStartingWithConsonant(int length)
+        {
+            string consonants = "бвгджзйклмнпрстфхцчшщbcdfghjklmnpqrstvwxyz";
+            foreach (var sentence in Sentences)
+            {
+                sentence.Tokens = sentence.Tokens
+                    .Where(t => !(t is Word w && w.Length == length && consonants.Contains(w.Value[0].ToString().ToLower())))
+                    .ToList();
+            }
+        }
+
+        public void ReplaceWordsInSentence(int sentenceIndex, int wordLength, string replacement)
+        {
+            if (sentenceIndex < 0 || sentenceIndex >= Sentences.Count) return;
+
+            var sentence = Sentences[sentenceIndex];
+            for (int i = 0; i < sentence.Tokens.Count; i++)
+            {
+                if (sentence.Tokens[i] is Word w && w.Length == wordLength)
+                    sentence.Tokens[i] = new Word(replacement);
+            }
+        }
+
+        public void RemoveStopWords(HashSet<string> stopWords)
+        {
+            foreach (var sentence in Sentences)
+            {
+                sentence.Tokens = sentence.Tokens
+                    .Where(t => !(t is Word w && stopWords.Contains(w.Value.ToLower())))
+                    .ToList();
+            }
+        }
     }
 }
