@@ -84,7 +84,6 @@
                     .ToList();
             }
         }
-
         public void ReplaceWordsInSentence(int sentenceIndex, int wordLength, string replacement)
         {
             if (sentenceIndex < 0 || sentenceIndex >= Sentences.Count) return;
@@ -97,14 +96,33 @@
             }
         }
 
-        public void RemoveStopWords(HashSet<string> stopWords)
-        {
-            foreach (var sentence in Sentences)
+        public static void RemoveStopWords(Text text, string path)
             {
-                sentence.Tokens = sentence.Tokens
-                    .Where(t => !(t is Word w && stopWords.Contains(w.Value.ToLower())))
-                    .ToList();
+                List<string> stopwords = new List<string>();
+                using (StreamReader sr = new StreamReader(path))
+                {
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        stopwords.Add(line.Trim());
+                    }
+                }
+
+                foreach (Sentence s in text.Sentences)
+                {
+                    List<Word> wordsToRemove = new List<Word>();
+                    foreach (Token t in s.Tokens)
+                    {
+                        if (t is Word w && stopwords.Contains(w.Value, StringComparer.OrdinalIgnoreCase))
+                        {
+                            wordsToRemove.Add(w);
+                        }
+                    }
+                    foreach (Word w in wordsToRemove)
+                    {
+                        s.Tokens.Remove(w);
+                    }
+                }
             }
         }
     }
-}

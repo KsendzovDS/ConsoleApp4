@@ -1,12 +1,12 @@
 ﻿using ConsoleApp4;
 
-namespace Lab3
+namespace ConsoleApp4
 {
     class Program
     {
         static void Main()
         {
-            string input = "Привет, это тестовый текст!Проверка связи. всех! недостающих знаков препинания? 'Ах, господи': - сказал он.";
+            string input = "Привет, это тестовый текст!Проверка связи. всех! недостающих знаков препинания? 'Ах, господи': - сказал он. Оно, они существуют. always. allow ";
 
             Console.WriteLine("=== Исходный текст ===");
             Console.WriteLine(input);
@@ -15,52 +15,102 @@ namespace Lab3
             TextParser parser = new TextParser(input);
             Text text = parser.Parse();
 
-            Console.WriteLine("=== Результат парсинга ===");
-            foreach (var sentence in text.Sentences)
-                Console.WriteLine(sentence);
-            Console.WriteLine($"\nВсего предложений: {text.Sentences.Count}");
-            Console.WriteLine();
+            while (true)
+            {
+                Console.WriteLine("\n=== ВЫБЕРИТЕ ОПЕРАЦИЮ ===");
+                Console.WriteLine("1. Сортировка по количеству слов");
+                Console.WriteLine("2. Сортировка по длине предложений");
+                Console.WriteLine("3. Слова в вопросительных предложениях");
+                Console.WriteLine("4. Удалить слова с согласной буквы");
+                Console.WriteLine("5. Заменить слова в предложении");
+                Console.WriteLine("6. Удалить стоп-слова");
+                Console.WriteLine("0. Выход");
+                Console.Write("Ваш выбор: ");
 
-            Console.WriteLine("=== Сортировка предложений по количеству слов ===");
-            var byWords = text.GetSentencesByWordCount();
-            foreach (var s in byWords)
-                Console.WriteLine($"[{s.WordCount} слов] {s}");
-            Console.WriteLine();
+                string choice = Console.ReadLine();
 
-            Console.WriteLine("=== Сортировка предложений по длине ===");
-            var byLength = text.GetSentencesByLength();
-            foreach (var s in byLength)
-                Console.WriteLine($"[{s.ToString().Length} символов] {s}");
-            Console.WriteLine();
+                switch (choice)
+                {
+                    case "1":
+                        Console.WriteLine("=== Сортировка по количеству слов ===");
+                        var byWords = text.GetSentencesByWordCount();
+                        foreach (var s in byWords)
+                            Console.WriteLine($"[{s.WordCount} слов] {s}");
+                        break;
 
-            Console.WriteLine("=== Слова длиной 5 в вопросительных предложениях ===");
-            var questionWords = text.FindWordsInQuestions(5);
-            if (questionWords.Count > 0)
-                Console.WriteLine(string.Join(", ", questionWords));
-            else
-                Console.WriteLine("Нет таких слов.");
-            Console.WriteLine();
+                    case "2":
+                        Console.WriteLine("=== Сортировка по длине ===");
+                        var byLength = text.GetSentencesByLength();
+                        foreach (var s in byLength)
+                            Console.WriteLine($"[{s.ToString().Length} символов] {s}");
+                        break;
 
-            Console.WriteLine("=== Удаляем слова длиной 4, начинающиеся с согласной ===");
-            text.RemoveWordsStartingWithConsonant(4);
-            foreach (var s in text.Sentences)
-                Console.WriteLine(s);
-            Console.WriteLine();
+                    case "3":
+                        Console.WriteLine("=== Слова в вопросительных предложениях ===");
+                        Console.Write("Введите длину слова: ");
+                        int length = Convert.ToInt32(Console.ReadLine());
+                        var questionWords = text.FindWordsInQuestions(length);
+                        if (questionWords.Count > 0)
+                            Console.WriteLine(string.Join(", ", questionWords));
+                        else
+                            Console.WriteLine("Нет таких слов.");
+                        break;
 
-            Console.WriteLine("=== Заменяем слова длиной 5 на '#####' во 2 предложении ===");
-            text.ReplaceWordsInSentence(1, 5, "#####");
-            foreach (var s in text.Sentences)
-                Console.WriteLine(s);
-            Console.WriteLine();
+                    case "4":
+                        Console.WriteLine("=== Удаляем слова с согласной буквы ===");
+                        Console.Write("Введите длину слова: ");
+                        int len = Convert.ToInt32(Console.ReadLine());
+                        text.RemoveWordsStartingWithConsonant(len);
+                        foreach (var s in text.Sentences)
+                            Console.WriteLine(s);
+                        break;
 
-            Console.WriteLine("=== Удаляем стоп-слова ===");
-            var stopWords = new HashSet<string> { "это", "как", "наш" };
-            text.RemoveStopWords(stopWords);
-            foreach (var s in text.Sentences)
-                Console.WriteLine(s);
-            Console.WriteLine();
+                    case "5":
+                        Console.WriteLine("=== Замена слов в предложении ===");
+                        Console.Write("Введите номер предложения: ");
+                        int sentIndex = Convert.ToInt32(Console.ReadLine()) - 1;
+                        Console.Write("Введите длину слов для замены: ");
+                        int wordLen = Convert.ToInt32(Console.ReadLine());
+                        Console.Write("Введите строку для замены: ");
+                        string replacement = Console.ReadLine();
+                        text.ReplaceWordsInSentence(sentIndex, wordLen, replacement);
+                        foreach (var s in text.Sentences)
+                            Console.WriteLine(s);
+                        break;
 
-            Console.WriteLine("=== Программа завершена ===");
+                    case "6":
+                        Console.WriteLine("Выберите:\n" +
+                            "1. Русские стоп-слова\n" +
+                            "2. Английские стоп-слова");
+                        int c = Convert.ToInt32(Console.ReadLine());
+                        string p = "";
+                        switch (c)
+                        {
+                            case 1:
+                                p = @"C:\Users\PC\source\repos\ConsoleApp4\ConsoleApp4\stopwords_ru.txt";
+                                break;
+                            case 2:
+                                p = @"C:\Users\PC\source\repos\ConsoleApp4\ConsoleApp4\stopwords_en.txt";
+                                break;
+                            default:
+                                Console.WriteLine("Неверный выбор!");
+                                continue;
+                        }
+                        Text.RemoveStopWords(text, p);
+                        Console.WriteLine("Результат:");
+                        foreach (var s in text.Sentences)
+                            Console.WriteLine(s);
+                        break;
+
+                    case "0":
+                        Console.WriteLine("Выход из программы.");
+                        return;
+
+                    default:
+                        Console.WriteLine("Неверный выбор!");
+                        break;
+                }
+            }
         }
     }
 }
