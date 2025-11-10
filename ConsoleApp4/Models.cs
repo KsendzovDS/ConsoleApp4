@@ -1,26 +1,40 @@
-﻿namespace ConsoleApp4
+﻿using System.Xml;
+using System.Xml.Serialization;
+
+namespace ConsoleApp4
 {
+    [XmlInclude(typeof(Word))]
+    [XmlInclude(typeof(Punctuation))]
+    [XmlInclude(typeof(Sentence))]
     public abstract class Token
     {
+        [XmlText]
         public string Value { get; set; }
         protected Token(string value) { Value = value; }
+        public Token() { }
         public override string ToString() => Value;
     }
-
+    [XmlRoot("Word")]
     public class Word : Token
     {
         public Word(string value) : base(value) { }
+        public Word()
+        {}
         public int Length => Value.Length;
     }
-
+    [XmlRoot("Punctuation")]
     public class Punctuation : Token
     {
         public Punctuation(string value) : base(value) { }
+        public Punctuation() { }
     }
-
+    [XmlRoot("Sentence")]
     public class Sentence
     {
+        [XmlElement("Word", typeof(Word))]
+        [XmlElement("Punctuation", typeof(Punctuation))]
         public List<Token> Tokens { get; set; } = new List<Token>();
+        public Sentence() { }
 
         public void AddToken(Token token) => Tokens.Add(token);
 
@@ -38,25 +52,28 @@
             return result;
         }
     }
-
+    [XmlRoot("Text")]
     public class Text
     {
+        [XmlElement("Sentence")]
         public List<Sentence> Sentences { get; set; } = new List<Sentence>();
 
         public void AddSentence(Sentence sentence) => Sentences.Add(sentence);
 
-        public override string ToString() => string.Join(" ", Sentences.Select(s => s.ToString()));
-
         public List<Sentence> GetSentencesByWordCount()
         {
             return Sentences.OrderBy(s => s.WordCount).ToList();
+        }
+        public Text()
+        {
+           
         }
 
         public List<Sentence> GetSentencesByLength()
         {
             return Sentences.OrderBy(s => s.ToString().Length).ToList();
         }
-          
+
         public HashSet<string> FindWordsInQuestions(int length)
         {
             var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -97,32 +114,50 @@
         }
 
         public static void RemoveStopWords(Text text, string path)
+        {
+            List<string> stopwords = new List<string>();
+            using (StreamReader sr = new StreamReader(path))
             {
-                List<string> stopwords = new List<string>();
-                using (StreamReader sr = new StreamReader(path))
+                string line;
+                while ((line = sr.ReadLine()) != null)
                 {
-                    string line;
-                    while ((line = sr.ReadLine()) != null)
+                    stopwords.Add(line.Trim());
+                }
+            }
+
+            foreach (Sentence sentence in text.Sentences)
+            {
+                var newTokens = new List<Token>();
+
+                foreach (Token token in sentence.Tokens)
+                {
+                    if (token is Word word)
                     {
-                        stopwords.Add(line.Trim());
+                        if (!stopwords.Contains(word.Value, StringComparer.OrdinalIgnoreCase))
+                        {
+                            newTokens.Add(token);
+                        }
+                    }
+                    else
+                    {
+                        newTokens.Add(token);
                     }
                 }
 
-                foreach (Sentence s in text.Sentences)
-                {
-                    List<Word> wordsToRemove = new List<Word>();
-                    foreach (Token t in s.Tokens)
-                    {
-                        if (t is Word w && stopwords.Contains(w.Value, StringComparer.OrdinalIgnoreCase))
-                        {
-                            wordsToRemove.Add(w);
-                        }
-                    }
-                    foreach (Word w in wordsToRemove)
-                    {
-                        s.Tokens.Remove(w);
-                    }
-                }
+                sentence.Tokens = newTokens;
+            }
+            text.Sentences.RemoveAll(s =>
+                s.Tokens.All(t => t is Punctuation) ||
+                s.Tokens.Count == 0);
+        }
+
+        public void ExportToXml(string filePath)
+        {
+            var serializer = new XmlSerializer(typeof(Text));
+            using (var writer = new StreamWriter(filePath))
+            {
+                serializer.Serialize(writer, this);
             }
         }
     }
+}

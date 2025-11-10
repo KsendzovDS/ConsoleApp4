@@ -24,6 +24,7 @@ namespace ConsoleApp4
                 Console.WriteLine("4. Удалить слова с согласной буквы");
                 Console.WriteLine("5. Заменить слова в предложении");
                 Console.WriteLine("6. Удалить стоп-слова");
+                Console.WriteLine("7. Экспорт в xml");
                 Console.WriteLine("0. Выход");
                 Console.Write("Ваш выбор: ");
 
@@ -100,6 +101,14 @@ namespace ConsoleApp4
                         Console.WriteLine("Результат:");
                         foreach (var s in text.Sentences)
                             Console.WriteLine(s);
+                        break;
+
+                    case "7":
+                        Console.WriteLine("=== Экспорт в XML ===");
+                        Console.Write("Введите путь для сохранения: ");
+                        string exportPath = Console.ReadLine();
+                        text.ExportToXml(exportPath);
+                        Console.WriteLine($"Текст экспортирован в {exportPath}");
                         break;
 
                     case "0":
